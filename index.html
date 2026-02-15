@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monitor oddechu</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        #chartContainer { width: 800px; height: 400px; }
+    </style>
+</head>
+<body>
+    <h1>Ostatnie odczyty BPM</h1>
+    <div id="chartContainer">
+        <canvas id="bpmChart"></canvas>
+    </div>
+    <table id="dataTable" border="1">
+        <thead>
+            <tr><th>Czas</th><th>BPM</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function fetchData() {
+            const response = await fetch('/api/data');
+            const data = await response.json();
+            return data;
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('bpmChart').getContext('2d');
+            const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+            const bpmValues = data.map(d => d.bpm);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'BPM',
+                        data: bpmValues,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+            data.slice().reverse().forEach(record => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = new Date(record.timestamp).toLocaleString();
+                row.insertCell().textContent = record.bpm;
+            });
+        }
+
+        async function loadData() {
+            const data = await fetchData();
+            renderChart(data.slice(-20)); // ostatnie 20 odczytów na wykresie
+            renderTable(data.slice(-10).reverse()); // ostatnie 10 w tabeli
+        }
+
+        loadData();
+        // Odświeżaj co 30 sekund
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>

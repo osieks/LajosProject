@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    container_name: bpm-monitor
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./bpm_data.json:/app/bpm_data.json
+      - ./index.html:/app/index.html
+    environment:
+      - FLASK_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/data"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
